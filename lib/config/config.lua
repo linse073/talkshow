@@ -9,9 +9,8 @@ config.server = {
 }
 
 config.gate = {
-    ip = "192.168.2.100",
-    -- ip = "192.168.1.202",
-    port = 8888,
+    ip = "192.168.2.19",
+    port = 20888,
     maxclient = 65535,
     servername = "gate01",
 }
@@ -33,9 +32,6 @@ config.mongo = {
         "offline",
         "status",
         "register",
-        "user_record",
-        "record_info",
-        "record_detail",
         "iap_log",
         "charge_log",
     },
@@ -45,11 +41,6 @@ config.mongo = {
         {"info", {"id", unique=true}},
         {"offline", {"id", unique=true}},
         {"status", {"key", unique=true}},
-        {"user_record", {"id", unique=true}},
-        {"record_info", {"id", unique=true}},
-        {"record_info", {"expire", expireAfterSeconds=7*24*60*60}},
-        {"record_detail", {"id", unique=true}},
-        {"record_detail", {"expire", expireAfterSeconds=8*24*60*60}},
         {"iap_log", {"transaction_id", unique=true}},
         {"charge_log", {"id", unique=true}},
     },
