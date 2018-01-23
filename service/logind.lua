@@ -22,7 +22,8 @@ local webclient
 local auth_proc = {
     function(user, data) -- password login
         local password, register = data:match("([^:]*):(.*)")
-        register = (register=="true")
+        password = crypt.base64decode(password)
+        register = (crypt.base64decode(register)=="true")
 		return {
 			password = password,
 			register = register,
@@ -33,6 +34,8 @@ local auth_proc = {
     end,
     function(user, data) -- weixin login
         local access_token, refresh_token = data:match("([^:]+):(.+)")
+        access_token = crypt.base64decode(access_token)
+        refresh_token = crypt.base64decode(refresh_token)
         -- NOTICE: umeng uid is unionid, not openid if unionid exist.
         local result, content = skynet.call(webclient, "lua", "request", 
             "https://api.weixin.qq.com/sns/userinfo", {openid=user, access_token=access_token, lang="zh_CN"})
@@ -61,6 +64,8 @@ end)
 function server.auth_handler(token, other)
 	-- the token is base64(user)@base64(sname):loginType
 	local user, sname, login_type = token:match("([^@]+)@([^:]+):(.+)")
+	user = crypt.base64decode(user)
+	sname = crypt.base64decode(sname)
 	login_type = tonumber(login_type)
     local proc = auth_proc[login_type]
     if not proc then
