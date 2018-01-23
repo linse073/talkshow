@@ -5,7 +5,6 @@ local notify = require "notify"
 local util = require "util"
 local cjson = require "cjson"
 local func = require "func"
-local option = require "logic.option"
 local md5 = require "md5"
 
 local pairs = pairs
@@ -41,9 +40,6 @@ local gm_level = tonumber(skynet.getenv("gm_level"))
 local start_utc_time = tonumber(skynet.getenv("start_utc_time"))
 local user_db
 local info_db
-local user_record_db
-local record_info_db
-local record_detail_db
 local iap_log_db
 local charge_log_db
 
@@ -65,9 +61,6 @@ skynet.init(function()
 	local master = skynet.queryservice("mongo_master")
     user_db = skynet.call(master, "lua", "get", "user")
     info_db = skynet.call(master, "lua", "get", "info")
-    user_record_db = skynet.call(master, "lua", "get", "user_record")
-    record_info_db = skynet.call(master, "lua", "get", "record_info")
-    record_detail_db = skynet.call(master, "lua", "get", "record_detail")
     iap_log_db = skynet.call(master, "lua", "get", "iap_log")
     charge_log_db = skynet.call(master, "lua", "get", "charge_log")
 end)
@@ -501,52 +494,6 @@ function proc.join(msg)
     end
     cz.finish()
     return rmsg, info
-end
-
-function proc.get_record(msg)
-    local data = game.data
-    local ur = skynet.call(user_record_db, "lua", "findOne", {id=data.id})
-    local ret = {}
-    if ur then
-        local nr = {}
-        local record = ur.record
-        if record then
-            local len = #record
-            local count = 0
-            for i = len, 1, -1 do
-                local v = record[i]
-                local ri = skynet.call(record_info_db, "lua", "findOne", {id=v})
-                if ri then
-                    count = count + 1
-                    ret[count] = ri
-                    nr[count] = v
-                    if count >= 12 then
-                        break
-                    end
-                end
-            end
-            if count ~= len then
-                util.reverse(nr)
-                if count == 0 then
-                    skynet.call(user_record_db, "lua", "update", {id=data.id}, {["$unset"]={record=0}}, true)
-                else
-                    skynet.call(user_record_db, "lua", "update", {id=data.id}, {["$set"]={record=nr}}, true)
-                end
-            end
-        end
-    end
-    return "record_all", {record=ret}
-end
-
-function proc.review_record(msg)
-    if not msg.id then
-        error{code = error_code.ERROR_ARGS}
-    end
-    local rd = skynet.call(record_detail_db, "lua", "findOne", {id=msg.id})
-    if not rd then
-        error{code = error_code.NO_RECORD}
-    end
-    return "record_info", rd
 end
 
 function proc.iap(msg)

@@ -36,27 +36,8 @@ local type_code = {
         ALREADY_READY="已经准备好了",
         ERROR_CHESS_NUMBER="房间不存在",
         ERROR_CHESS_NAME="游戏不匹配",
-        NO_OUT_CARD="不存在这张牌",
-        INVALID_CARD="错误牌",
         ERROR_OPERATION="操作失败",
-        CHI_COUNT_LIMIT="你已经吃三摊了",
-        WAIT_FOR_OTHER="请等待其他牌友",
-        ALREADY_PASS="已经过了",
-        CONCLUDE_CARD_LIMIT="尚未流局",
-        OUT_CARD_LIMIT="出牌限制",
-        ALREADY_REPLY="已经回答",
-        IN_CLOSE_PROCESS="解散过程中",
-        NOT_IN_CLOSE="尚未解散房间",
         ROOM_CARD_LIMIT="钻石数量不足",
-        NO_RECORD="战绩已删除",
-        ALREADY_DEAL_END="已经发完牌",
-        ROOM_CLOSE="房间已解散",
-        IP_LIMIT="IP限定，无法加入",
-    },
-
-    [4000] = {
-        ALREADY_OUT="已经摆牌",
-        ALREADY_GIVE_UP="已经弃牌",
     },
 }
 

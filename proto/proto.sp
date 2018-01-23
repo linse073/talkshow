@@ -3,11 +3,14 @@
     id 1 : integer
     sex 2 : integer
     create_time 3 : integer
-    nick_name 4 : string
-    head_img 5 : string
-    ip 6 : string
-    last_login_time 7 : integer
-    login_time 8 : integer
+    room_card 4 : integer
+    nick_name 5 : string
+    head_img 6 : string
+    ip 7 : string
+    day_card 8 : boolean
+    last_login_time 9 : integer
+    login_time 10 : integer
+    invite_code 11 : integer
 }
 
 .other_all {
