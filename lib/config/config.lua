@@ -9,7 +9,7 @@ config.server = {
 }
 
 config.gate = {
-    ip = "192.168.2.19",
+    ip = "192.168.1.19",
     port = 20888,
     maxclient = 65535,
     servername = "gate01",
