@@ -3,7 +3,7 @@ local util = require "util"
 local share = require "share"
 local random = require "random"
 local func = require "func"
-local option = require "logic.option"
+-- local option = require "logic.option"
 
 local assert = assert
 local pcall = pcall
@@ -42,9 +42,9 @@ end
 skynet.start(function()
     cz = share.cz
     rand = share.rand
-    for k, v in pairs(option) do
-        chess[k] = require("logic." .. k)
-    end
+    -- for k, v in pairs(option) do
+    --     chess[k] = require("logic." .. k)
+    -- end
 
 	skynet.dispatch("lua", function(session, source, command, ...)
 		local f = CMD[command]
