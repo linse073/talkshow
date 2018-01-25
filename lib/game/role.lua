@@ -112,7 +112,6 @@ local function get_user()
                 openid = data.openid,
                 unionid = data.unionid,
 				ip = data.ip,
-                day_card = false,
                 invite_code = 0,
                 first_charge = {},
 			}
@@ -166,7 +165,6 @@ function role.exit()
 end
 
 local function update_day(user, od, nd)
-    user.day_card = false
 end
 
 function role.update_day(od, nd)
@@ -234,9 +232,6 @@ function role.btk(addr)
 end
 
 function role.repair(user, now)
-    if user.day_card == nil then
-        user.day_card = false
-    end
     if not user.invite_code then
         user.invite_code = 0
     end
@@ -531,18 +526,6 @@ function proc.iap(msg)
     else
         error{code = error_code.IAP_FAIL}
     end
-end
-
-function proc.share(msg)
-    local user = game.data.user
-    if user.day_card then
-        error{code = error_code.ALREADY_SHARE}
-    end
-    local p = update_user()
-    role.add_room_card(p, false, define.share_reward)
-    user.day_card = true
-    p.user.day_card = true
-    return "update_user", {update=p}
 end
 
 function proc.invite_code(msg)

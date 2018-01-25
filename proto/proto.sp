@@ -3,28 +3,74 @@
     id 1 : integer
     sex 2 : integer
     create_time 3 : integer
-    room_card 4 : integer
-    nick_name 5 : string
-    head_img 6 : string
-    ip 7 : string
-    day_card 8 : boolean
-    last_login_time 9 : integer
-    login_time 10 : integer
-    invite_code 11 : integer
+    nick_name 4 : string
+    head_img 5 : string
+    ip 6 : string
+    last_login_time 7 : integer
+    login_time 8 : integer
+    model 9 : model_info
+    name 10 : string
 }
 
-.other_all {
-    other 0 : *user_info
+.model_info {
+    index 0 : integer
+}
+
+.change_user {
+    model 0 : model_info
+    name 1 : string
+}
+
+.room_user {
+    account 0 : string
+    id 1 : integer
+    sex 2 : integer
+    nick_name 3 : string
+    head_img 4 : string
+    ip 5 : string
+    model 6 : model_info
+    name 7 : string
+    pos 8 : integer
+    action 9 : string
+    permit 10 : integer
+    start_show_time 11 : integer
+}
+
+.room_info {
+    name 0 : string
+    id 1 : integer
+    chief 2 : integer
+    show_time 3 : integer
+    room_type 4 : integer
+    desc 5 : string
+    show_list 6 : *integer
+    chat 7 : boolean
+}
+
+.room_all {
+    info 0 : room_info
+    user 1 : *room_user
+}
+
+.change_room {
+    name 0 : string
+    desc 1 : string
+    show_time 2 : integer
+    chat 3 : boolean
+}
+
+.show {
+    action 0 : string
 }
 
 .user_all {
     user 0 : user_info
+    room 1 : room_all
 }
 
 .info_all {
     user 0 : user_all
     start_time 1 : integer
-    code 2 : integer
 }
 
 .update_user {
@@ -59,26 +105,18 @@
 
 .new_room {
     name 0 : string
-    rule 1 : string
-    location 2 : binary
+    desc 1 : string
+    show_time 2 : integer
+    room_type 3 : integer
+    chat 4 : boolean
 }
 
 .join {
-    number 0 : integer
-    location 1 : binary
-}
-
-.room_name {
-	name 0 : string
+    id 0 : integer
 }
 
 .enter_game {
     number 0 : integer
-}
-
-.chat_info {
-    text 0 : string
-    audio 1 : binary
 }
 
 .iap {
@@ -94,8 +132,4 @@
 
 .charge_ret {
     url 0 : string
-}
-
-.location_info {
-    location 0 : binary
 }
