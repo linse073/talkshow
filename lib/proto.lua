@@ -43,6 +43,8 @@ local type_msg = {
         "room_info",
         "room_user",
         "room_all",
+        "room_list_info",
+        "room_list",
     },
 }
 

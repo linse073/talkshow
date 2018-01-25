@@ -71,6 +71,7 @@
 .info_all {
     user 0 : user_all
     start_time 1 : integer
+    room_list 2 : *room_list_info
 }
 
 .update_user {
@@ -113,6 +114,17 @@
 
 .join {
     id 0 : integer
+}
+
+.room_list_info {
+    name 0 : string
+    id 1 : integer
+    room_type 2 : integer
+    user_count 3 : integer
+}
+
+.room_list {
+    list 0 : *room_list_info
 }
 
 .iap {
