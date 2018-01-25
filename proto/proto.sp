@@ -115,10 +115,6 @@
     id 0 : integer
 }
 
-.enter_game {
-    number 0 : integer
-}
-
 .iap {
     index 0 : integer
     receipt 1 : string
