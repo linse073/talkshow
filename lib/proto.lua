@@ -45,6 +45,7 @@ local type_msg = {
         "room_all",
         "room_list_info",
         "room_list",
+        "get_room_list",
     },
 }
 

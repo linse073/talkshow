@@ -3,7 +3,6 @@ local util = require "util"
 local share = require "share"
 local random = require "random"
 local func = require "func"
--- local option = require "logic.option"
 
 local assert = assert
 local pcall = pcall
@@ -16,7 +15,7 @@ local pairs = pairs
 local number = tonumber(...)
 local cz
 local rand
-local chess = {}
+local talkshow
 
 local CMD = {}
 util.timer_wrap(CMD)
@@ -25,7 +24,7 @@ local logic
 
 function CMD.init(name, rule, info, agent, server, card, location)
     rand.init(floor(skynet.time()))
-    logic = setmetatable({}, chess[name])
+    logic = setmetatable({}, talkshow)
     logic:init(number, rule, rand, server, card)
     return logic:enter(info, agent, 1, location)
 end
@@ -42,9 +41,7 @@ end
 skynet.start(function()
     cz = share.cz
     rand = share.rand
-    -- for k, v in pairs(option) do
-    --     chess[k] = require("logic." .. k)
-    -- end
+    talkshow = require("logic.talkshow")
 
 	skynet.dispatch("lua", function(session, source, command, ...)
 		local f = CMD[command]
