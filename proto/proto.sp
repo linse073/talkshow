@@ -8,16 +8,12 @@
     ip 6 : string
     last_login_time 7 : integer
     login_time 8 : integer
-    model 9 : model_info
+    model 9 : integer
     name 10 : string
 }
 
-.model_info {
-    index 0 : integer
-}
-
 .change_user {
-    model 0 : model_info
+    model 0 : integer
     name 1 : string
 }
 
@@ -28,12 +24,12 @@
     nick_name 3 : string
     head_img 4 : string
     ip 5 : string
-    model 6 : model_info
+    model 6 : integer
     name 7 : string
     pos 8 : integer
-    action 9 : string
-    permit 10 : integer
-    start_show_time 11 : integer
+    action 9 : integer
+    permit 10 : string
+    show_time 11 : integer
 }
 
 .room_info {
@@ -44,23 +40,25 @@
     room_type 4 : integer
     desc 5 : string
     show_list 6 : *integer
-    chat 7 : boolean
+    permit 7 : string
 }
 
 .room_all {
     info 0 : room_info
     user 1 : *room_user
+    start_session 2 : integer
+    session 3 : integer
 }
 
 .change_room {
     name 0 : string
     desc 1 : string
     show_time 2 : integer
-    chat 3 : boolean
+    permit 3 : string
 }
 
 .show {
-    action 0 : string
+    action 0 : integer
 }
 
 .user_all {
@@ -109,7 +107,7 @@
     desc 1 : string
     show_time 2 : integer
     room_type 3 : integer
-    chat 4 : boolean
+    permit 4 : string
 }
 
 .join {
