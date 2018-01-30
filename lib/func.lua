@@ -43,35 +43,4 @@ function func.return_msg(ok, msg, info)
     return msg, info
 end
 
-function func.poker_info(c)
-    local tc = c - 1
-    return tc//base.POKER_VALUE+1, tc%base.POKER_VALUE+1
-end
-
-function func.sort_poker_value(l, r)
-    local lc, lv = func.poker_info(l)
-    local rc, rv = func.poker_info(r)
-    if lv ~= rv then
-        return lv > rv
-    end
-    return lc > rc
-end
-
-function func.sort_poker_color(l, r)
-    local lc, lv = func.poker_info(l)
-    local rc, rv = func.poker_info(r)
-    if lc ~= rc then
-        return lc > rc
-    end
-    return lv > rv
-end
-
-function func.p13_special_score(i)
-    local s = base.P13_SPECIAL_SCORE[i]
-    if s then
-        return s
-    end
-    return 6
-end
-
 return func

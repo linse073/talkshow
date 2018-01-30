@@ -1,22 +1,15 @@
 local skynet = require "skynet"
 local share = require "share"
 local util = require "util"
-local timer = require "timer"
-local bson = require "bson"
-local func = require "func"
 
 local string = string
 local ipairs = ipairs
 local pairs = pairs
 local table = table
 local floor = math.floor
-local os = os
 
 local base
 local error_code
-local user_record_db
-local record_info_db
-local record_detail_db
 local table_mgr
 local chess_mgr
 local offline_mgr
@@ -24,18 +17,10 @@ local offline_mgr
 skynet.init(function()
     base = share.base
     error_code = share.error_code
-    local master = skynet.queryservice("mongo_master")
-    user_record_db = skynet.call(master, "lua", "get", "user_record")
-    record_info_db = skynet.call(master, "lua", "get", "record_info")
-    record_detail_db = skynet.call(master, "lua", "get", "record_detail")
     table_mgr = skynet.queryservice("table_mgr")
     chess_mgr = skynet.queryservice("chess_mgr")
     offline_mgr = skynet.queryservice("offline_mgr")
 end)
-
-local function valid_card(c)
-    return c>0 and c<=base.POKER_CARD
-end
 
 local function session_msg(user, chess_user, chess_info)
     local msg = {update={chess={
@@ -72,198 +57,73 @@ local function broadcast(chess_user, chess_info, role, ...)
     end
 end
 
-local jhbj = {}
+local talkshow = {}
 
-function jhbj:init(number, rule, rand, server, card)
+function talkshow:init(number, room, rand, server)
+    self._room = room
     self._number = number
-    self._rule = rule
     self._rand = rand
     self._server = server
-    self._custom_card = card
-    self._banker = 1
-    self._status = base.CHESS_STATUS_READY
     self._role = {}
     self._id = {}
     self._count = 0
-    self._pause = false
-    self._close_index = 0
-    self._record = {
-        info = {
-            name = "jhbj",
-            number = number,
-            rule = rule.pack,
-        },
-    }
+    self._chat = (string.unpack("B", room.permit)==1)
+    self._show_list = {}
 end
 
-function jhbj:status(id, status, addr)
-    local info = self._id[id]
-    if info then
-        if status~=info.status or (addr and addr~=info.ip) then
-            info.status = status
-            if addr then
-                info.ip = addr
-            end
-            if status == base.USER_STATUS_LOGOUT then
-                info.agent = nil
-            end
-            local user = {index=info.index, status=status, ip=addr}
-            broadcast({user}, chess, self._role)
-        end
-    end
-end
-
-function jhbj:destroy()
-    timer.del_once_routine("close_timer")
+function talkshow:destroy()
 end
 
 local function finish()
     skynet.call(skynet.self(), "lua", "destroy")
     skynet.call(table_mgr, "lua", "free", skynet.self())
 end
-function jhbj:finish()
-    local role = self._role
-    self._role = {}
-    self._id = {}
-    for i = 1, self._rule.user do
-        local v = role[i]
-        if v then
-            skynet.call(chess_mgr, "lua", "del", v.id)
-            if v.agent then
-                skynet.call(v.agent, "lua", "action", "role", "leave")
-            end
-        end
-    end
+function talkshow:finish()
+    -- local role = self._role
+    -- self._role = {}
+    -- self._id = {}
+    -- for i = 1, self._rule.user do
+    --     local v = role[i]
+    --     if v then
+    --         skynet.call(chess_mgr, "lua", "del", v.id)
+    --         if v.agent then
+    --             skynet.call(v.agent, "lua", "action", "role", "leave")
+    --         end
+    --     end
+    -- end
     skynet.fork(finish)
 end
 
-function jhbj:custom_card(name, card)
-    if name ~= "jhbj" then
-        error{code = error_code.ERROR_CHESS_NAME}
-    end
-    self._custom_card = card
-    return "response", ""
-end
-
-function jhbj:pack(id, ip, agent)
-    local si = self._id[id]
-    if si then
-        si.ip = ip
-        si.status = base.USER_STATUS_ONLINE
-        si.agent = agent
-        local role = self._role
-        broadcast({
-            {index=si.index, status=si.status, ip=ip},
-        }, nil, role, id)
-        local status = self._status
-        local rule = self._rule
-        if status == base.CHESS_STATUS_READY then
-            local chess = {
-                name = "jhbj",
-                number = self._number,
-                rule = rule.pack,
-                banker = self._banker,
-                status = status,
-                count = self._count,
-                pause = self._pause,
-                old_banker = self._old_banker,
-                close_index = self._close_index,
-                close_time = self._close_time,
-            }
-            local user = {}
-            for i = 1, rule.user do
-                local info = role[i]
-                if info then
-                    local u = {
-                        account = info.account,
-                        id = info.id,
-                        sex = info.sex,
-                        nick_name = info.nick_name,
-                        head_img = info.head_img,
-                        ip = info.ip,
-                        index = info.index,
-                        score = info.score,
-                        ready = info.ready,
-                        top_score = info.top_score,
-                        hu_count = info.hu_count,
-                        status = info.status,
-                        out_index = info.out_index,
-                        give_up = info.give_up,
-                        location = info.location,
-                    }
-                    if info.out_card then
-                        local show_card = {
-                            own_card = info.out_card,
-                            last_index = info.out_index,
-                            score = info.last_score,
-                            give_up = info.give_up,
-                        }
-                        u.show_card = show_card
-                    end
-                    user[#user+1] = u
-                end
-            end
-            return {info=chess, user=user, start_session=si.session}
-        elseif status == base.CHESS_STATUS_START then
-            local chess = {
-                name = "jhbj",
-                number = self._number,
-                rule = rule.pack,
-                banker = self._banker,
-                status = status,
-                count = self._count,
-                pause = self._pause,
-                close_index = self._close_index,
-                close_time = self._close_time,
-            }
-            local user = {}
-            for i = 1, rule.user do
-                local info = role[i]
-                if info then
-                    local u = {
-                        account = info.account,
-                        id = info.id,
-                        sex = info.sex,
-                        nick_name = info.nick_name,
-                        head_img = info.head_img,
-                        ip = info.ip,
-                        index = info.index,
-                        score = info.score,
-                        ready = info.ready,
-                        agree = info.agree,
-                        top_score = info.top_score,
-                        hu_count = info.hu_count,
-                        status = info.status,
-                        location = info.location,
-                        pass = info.out_card~=nil or info.give_up,
-                    }
-                    if info.id == id then
-                        u.own_card = info.deal_card
-                        u.out_card = info.out_card
-                        u.out_index = info.out_index
-                        u.give_up = info.give_up
-                    end
-                    user[#user+1] = u
-                end
-            end
-            return {info=chess, user=user, start_session=si.session}
-        end
-    end
-end
-
-function jhbj:enter(info, agent, index, location)
+function talkshow:random_pos()
+    local pos = self._rand.randi(1, base.MAX_ROLE)
     local role = self._role
-    assert(not role[index], string.format("Seat %d already has role.", index))
+    if role[pos] then
+        local p = pos - 1
+        while p >= 1 do
+            if not role[p] then
+                return p
+            end
+            p = pos - 1
+        end
+        p = pos + 1
+        while p <= base.MAX_ROLE do
+            if not role[p] then
+                return p
+            end
+            p = pos + 1
+        end
+    else
+        return pos
+    end
+    assert(false, "role full")
+end
+
+function talkshow:enter(info, agent)
+    local role = self._role
     info.agent = agent
     info.index = index
-    info.location = location
-    info.score = 0
-    info.ready = false
-    info.hu_count = 0
-    info.top_score = 0
     info.session = 1
-    info.status = base.USER_STATUS_ONLINE
-    role[index] = info
+    role[pos] = info
     self._id[info.id] = info
     skynet.call(chess_mgr, "lua", "add", info.id, skynet.self())
     local user = {}
@@ -272,7 +132,7 @@ function jhbj:enter(info, agent, index, location)
         user[#user+1] = role[i] -- role[i] can be nil
     end
     local chess = {
-        name = "jhbj",
+        name = "talkshow",
         number = self._number,
         rule = rule.pack,
         banker = self._banker,
@@ -288,7 +148,7 @@ function jhbj:enter(info, agent, index, location)
     }}}
 end
 
-function jhbj:join(info, room_card, agent, location)
+function talkshow:join(info, room_card, agent, location)
     if self._status ~= base.CHESS_STATUS_READY then
         error{code = error_code.ERROR_OPERATION}
     end
@@ -324,7 +184,7 @@ function jhbj:join(info, room_card, agent, location)
     return rmsg, rinfo
 end
 
-function jhbj:leave(id, msg)
+function talkshow:leave(id, msg)
     local info = self._id[id]
     if not info then
         error{code = error_code.NOT_IN_CHESS}
@@ -379,32 +239,7 @@ function jhbj:leave(id, msg)
     end
 end
 
-function jhbj:chat_info(id, msg)
-    local info = self._id[id]
-    if not info then
-        error{code = error_code.NOT_IN_CHESS}
-    end
-    local cu = {
-        {index=info.index, chat_text=msg.text, chat_audio=msg.audio}
-    }
-    broadcast(cu, nil, self._role, id)
-    return session_msg(info, cu)
-end
-
-function jhbj:location_info(id, msg)
-    local info = self._id[id]
-    if not info then
-        error{code = error_code.NOT_IN_CHESS}
-    end
-    info.location = msg.location
-    local cu = {
-        {index=info.index, location=msg.location}
-    }
-    broadcast(cu, nil, self._role, id)
-    return session_msg(info, cu)
-end
-
-function jhbj:is_all_agree()
+function talkshow:is_all_agree()
     local count = 0
     for k, v in ipairs(self._role) do
         if v.agree then
@@ -414,7 +249,7 @@ function jhbj:is_all_agree()
     return count > self._rule.user//2
 end
 
-function jhbj:reply(id, msg)
+function talkshow:reply(id, msg)
     local info = self._id[id]
     if not info then
         error{code = error_code.NOT_IN_CHESS}
@@ -455,7 +290,7 @@ function jhbj:reply(id, msg)
     return session_msg(info, cu, chess)
 end
 
-function jhbj:is_all_ready()
+function talkshow:is_all_ready()
     local role = self._role
     for i = 1, self._rule.user do
         local v = role[i]
@@ -466,7 +301,7 @@ function jhbj:is_all_ready()
     return true
 end
 
-function jhbj:op_check(id, status)
+function talkshow:op_check(id, status)
     if self._status ~= status then
         error{code = error_code.ERROR_OPERATION}
     end
@@ -477,7 +312,7 @@ function jhbj:op_check(id, status)
     return info
 end
 
-function jhbj:ready(id, msg)
+function talkshow:ready(id, msg)
     local info = self:op_check(id, base.CHESS_STATUS_READY)
     if info.ready then
         error{code = error_code.ALREADY_READY}
@@ -511,7 +346,7 @@ function jhbj:ready(id, msg)
     return session_msg(info, {user}, chess)
 end
 
-function jhbj:consume_card()
+function talkshow:consume_card()
     local rule = self._rule
     if rule.aa_pay then
         local count = -rule.single_card
@@ -708,7 +543,7 @@ local function special(extra, card, type_card)
     return 0
 end
 
-function jhbj:settle(info)
+function talkshow:settle(info)
     local index = info.index
     local id = info.id
     local count = self._rule.user
@@ -894,7 +729,7 @@ function jhbj:settle(info)
     return session_msg(info, user, ci)
 end
 
-function jhbj:is_all_out()
+function talkshow:is_all_out()
     local role = self._role
     for i = 1, self._rule.user do
         local v = role[i]
@@ -905,7 +740,7 @@ function jhbj:is_all_out()
     return true
 end
 
-function jhbj:bj_out(id, msg)
+function talkshow:bj_out(id, msg)
     local info = self:op_check(id, base.CHESS_STATUS_START)
     local index = info.index
     if info.out_card then
@@ -951,7 +786,7 @@ function jhbj:bj_out(id, msg)
     end
 end
 
-function jhbj:give_up(id, msg)
+function talkshow:give_up(id, msg)
     local info = self:op_check(id, base.CHESS_STATUS_START)
     local index = info.index
     if info.out_card then
@@ -981,7 +816,7 @@ function jhbj:give_up(id, msg)
     end
 end
 
-function jhbj:start()
+function talkshow:start()
     local card
     if self._custom_card then
         card = util.clone(self._custom_card)
@@ -1028,7 +863,7 @@ function jhbj:start()
     end
     self._detail = {
         info = {
-            name = "jhbj",
+            name = "talkshow",
             number = self._number,
             rule = rule.pack,
             banker = self._banker,
@@ -1039,4 +874,4 @@ function jhbj:start()
     }
 end
 
-return {__index=jhbj}
+return {__index=talkshow}

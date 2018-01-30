@@ -160,7 +160,7 @@ function role.exit()
     notify.exit()
     local chess_table = data.chess_table
     if chess_table then
-        skynet.call(chess_table, "lua", "status", data.id, base.USER_STATUS_LOGOUT)
+        skynet.call(chess_table, "lua", "leave", data.id)
     end
 end
 
@@ -203,23 +203,12 @@ function role.heart_beat()
 end
 
 function role.afk()
-    local data = game.data
-    local chess_table = data.chess_table
-    if chess_table then
-        skynet.call(chess_table, "lua", "status", data.id, base.USER_STATUS_LOST)
-    end
 end
 
 local function btk(addr)
-    local data = game.data
-    local chess_table = data.chess_table
-    if chess_table then
-        skynet.call(chess_table, "lua", "status", data.id, base.USER_STATUS_ONLINE, addr)
-    else
-        local p = update_user()
-        p.user.ip = addr
-        notify.add("update_user", {update=p})
-    end
+    local p = update_user()
+    p.user.ip = addr
+    notify.add("update_user", {update=p})
 end
 function role.btk(addr)
     local data = game.data
@@ -337,6 +326,10 @@ local function syn_info(now)
         skynet.error(string.format("synchronize user info %d fail.", user.id))
     end
 end
+local function notify_room_list()
+    local list = skynet.call(table_mgr, "lua", "get_all")
+    notify.add("room_list", list)
+end
 function proc.enter_game(msg)
 	cz.start()
 	local data = game.data
@@ -369,42 +362,28 @@ function proc.enter_game(msg)
     for _, v in ipairs(pack) do
         ret[v[1]] = v[2]
     end
-    local first_charge = {}
-    -- NOTICE: the type of mongo map key is string
-    for k, v in pairs(user.first_charge) do
-        first_charge[#first_charge+1] = tonumber(k)
-    end
-    if #first_charge > 0 then
-        ret.first_charge = first_charge
-    end
+    -- local first_charge = {}
+    -- -- NOTICE: the type of mongo map key is string
+    -- for k, v in pairs(user.first_charge) do
+    --     first_charge[#first_charge+1] = tonumber(k)
+    -- end
+    -- if #first_charge > 0 then
+    --     ret.first_charge = first_charge
+    -- end
     local chess_table = skynet.call(chess_mgr, "lua", "get", user.id)
-    local code
-    if chess_table then
-        data.chess_table = chess_table
-        ret.chess = skynet.call(chess_table, "lua", "pack", user.id, user.ip, skynet.self())
-    elseif msg.number then
-        chess_table = skynet.call(table_mgr, "lua", "get", msg.number)
-        if chess_table then
-            local rmsg, info = skynet.call(chess_table, "lua", "join", data.info, user.room_card, skynet.self())
-            if rmsg == "update_user" then
-                data.chess_table = chess_table
-                ret.chess = info.update.chess
-            elseif rmsg == "error_code" then
-                code = info.code
-            end
-        else
-            code = error_code.ROOM_CLOSE
-        end
+    if chess_mgr then
+        skynet.call(chess_table, "lua", "leave", user.id)
     end
     timer.add_routine("save_role", role.save_routine, 300)
     timer.add_day_routine("update_day", role.update_day)
     skynet.call(role_mgr, "lua", "enter", data.info, skynet.self())
+    skynet.fork(notify_room_list)
     -- if data.login_type == base.LOGIN_WEIXIN and not debug then
     --     skynet.fork(syn_info, now)
     -- end
     data.enter = true
     cz.finish()
-    return "info_all", {user=ret, start_time=start_utc_time, code=code}
+    return "info_all", {user=ret, start_time=start_utc_time}
 end
 
 function proc.get_offline(msg)
@@ -433,35 +412,20 @@ function proc.get_role(msg)
     return "role_info", {info=puser}
 end
 
-function proc.new_chess(msg)
-    local config = option[msg.name]
-    if not config then
-        error{code = error_code.NO_CHESS}
-    end
+function proc.new_room(msg)
     local data = game.data
     cz.start()
     if data.chess_table then
         error{code = error_code.ALREAD_IN_CHESS}
     end
-    local rule = config(msg.rule)
     local user = data.user
-    if rule.aa_pay then
-        if user.room_card < rule.single_card then
-            error{code = error_code.ROOM_CARD_LIMIT}
-        end
-    else
-        if user.room_card < rule.total_card then
-            error{code = error_code.ROOM_CARD_LIMIT}
-        end
-    end
     assert(not skynet.call(chess_mgr, "lua", "get", data.id), string.format("Chess mgr has %d.", data.id))
-    local chess_table = skynet.call(table_mgr, "lua", "new")
+    local chess_table = skynet.call(table_mgr, "lua", "new", msg.name, msg.room_type)
     if not chess_table then
         error{code = error_code.INTERNAL_ERROR}
     end
-    local card = data[msg.name .. "_card"]
     local rmsg, info = skynet.call(chess_table, "lua", "init", 
-        msg.name, rule, data.info, skynet.self(), data.server_address, card, msg.location)
+        msg, data.info, skynet.self(), data.server_address)
     if rmsg == "update_user" then
         data.chess_table = chess_table
     else
@@ -483,7 +447,7 @@ function proc.join(msg)
     end
     assert(not skynet.call(chess_mgr, "lua", "get", data.id), string.format("Chess mgr has %d.", data.id))
     local user = data.user
-    local rmsg, info = skynet.call(chess_table, "lua", "join", data.info, user.room_card, skynet.self(), msg.location)
+    local rmsg, info = skynet.call(chess_table, "lua", "join", data.info, skynet.self())
     if rmsg == "update_user" then
         data.chess_table = chess_table
     end

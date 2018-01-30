@@ -13,22 +13,25 @@ local rand
 local table_list = {}
 local number_list = {}
 local free_list = list()
+local use_list = {}
 
 local function new_number()
     local number = rand.randi(200000, 999999)
     if number_list[number] then
+        local num = number
         repeat
-            number = number - 1
-            if not number_list[number] then
-                return number
+            num = num - 1
+            if not number_list[num] then
+                return num
             end
-        until number < 200000
+        until num < 200000
+        num = number
         repeat
-            number = number + 1
-            if not number_list[number] then
-                return number
+            num = num + 1
+            if not number_list[num] then
+                return num
             end
-        until number > 999999
+        until num > 999999
     else
         return number
     end
@@ -63,7 +66,7 @@ end
 
 local CMD = {}
 
-function CMD.new()
+function CMD.new(name, room_type)
     local len = free_list.count()
     local info
     if len > 0 then
@@ -85,6 +88,10 @@ function CMD.new()
         table_list[agent] = info
         number_list[number] = info
     end
+    info.name = name
+    info.user_count = 0
+    info.room_type = room_type
+    use_list[info.number] = info
     return info.agent
 end
 
@@ -92,6 +99,7 @@ function CMD.free(agent)
     local info = assert(table_list[agent], string.format("No table service %d.", agent))
     if info.use then
         info.use = false
+        use_list[info.number] = nil
         local len = free_list.push(info)
         if len >= 150 then
             skynet.fork(del_table, 50)
@@ -100,10 +108,26 @@ function CMD.free(agent)
 end
 
 function CMD.get(number)
-    local info = number_list[number]
-    if info and info.use then
+    local info = use_list[number]
+    if info then
         return info.agent
     end
+end
+
+function CMD.update(number, name, count)
+    local info = use_list[number]
+    if info then
+        info.name = name
+        info.count = count
+    end
+end
+
+function CMD.get_all()
+    local list = {}
+    for k, v in pairs(use_list) do
+        list[#list+1] = v
+    end
+    return list
 end
 
 function CMD.open()

@@ -34,7 +34,7 @@
 
 .room_info {
     name 0 : string
-    id 1 : integer
+    number 1 : integer
     chief 2 : integer
     show_time 3 : integer
     room_type 4 : integer
@@ -69,7 +69,6 @@
 .info_all {
     user 0 : user_all
     start_time 1 : integer
-    room_list 2 : *room_list_info
 }
 
 .update_user {
@@ -111,12 +110,12 @@
 }
 
 .join {
-    id 0 : integer
+    number 0 : integer
 }
 
 .room_list_info {
     name 0 : string
-    id 1 : integer
+    number 1 : integer
     room_type 2 : integer
     user_count 3 : integer
 }
