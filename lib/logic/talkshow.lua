@@ -201,7 +201,7 @@ function talkshow:leave(id, msg)
         room.chief = 0
         ru = {chief = 0}
         self:finish()
-    else if id == room.chief then
+    elseif id == room.chief then
         room.chief = self:random_chief()
         ru = {chief = room.chief}
     end
