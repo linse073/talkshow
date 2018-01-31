@@ -562,4 +562,16 @@ function proc.get_room_list(msg)
     return "room_list", list
 end
 
+function proc.change_user(msg)
+    local data = game.data
+    local user = data.user
+    local p = update_user()
+    local pu = p.user
+    user.model = msg.model
+    pu.model = msg.model
+    user.name = msg.name
+    pu.name = msg.name
+    return "update_user", {update=p}
+end
+
 return role

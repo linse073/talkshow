@@ -17,7 +17,6 @@ local type_msg = {
         "user_all",
         "info_all",
         "update_user",
-        "change_user",
         "get_role",
         "role_info",
         "room_info",
@@ -43,6 +42,7 @@ local type_msg = {
         "charge_ret",
         "room_list",
         "get_room_list",
+        "change_user",
     },
     
     [20000] = {
