@@ -20,6 +20,10 @@ local type_msg = {
         "change_user",
         "get_role",
         "role_info",
+        "room_info",
+        "room_user",
+        "room_all",
+        "room_list_info",
     },
 
     [2100] = {
@@ -33,19 +37,18 @@ local type_msg = {
     [2300] = {
         "new_room",
         "join",
-        "quit",
         "iap",
         "update_day",
         "charge",
         "charge_ret",
-        "change_room",
-        "show",
-        "room_info",
-        "room_user",
-        "room_all",
-        "room_list_info",
         "room_list",
         "get_room_list",
+    },
+    
+    [20000] = {
+        "quit",
+        "change_room",
+        "show",
     },
 }
 

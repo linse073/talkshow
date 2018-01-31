@@ -181,7 +181,26 @@ function talkshow:random_chief()
     assert(false, "not role")
 end
 
-function talkshow:leave(id, msg)
+function talkshow:leave(id)
+    local ids = self._id
+    local info = ids[id]
+    if info then
+        ids[id] = nil
+        self._role[info.pos] = nil
+        self._count = self._count - 1
+        skynet.call(chess_mgr, "lua", "del", id)
+        skynet.call(info.agent, "lua", "action", "role", "leave")
+        local room = self._room
+        if self._count == 0 then
+            room.chief = 0
+            self:finish()
+        elseif id == room.chief then
+            room.chief = self:random_chief()
+        end
+    end
+end
+
+function talkshow:quit(id, msg)
     local ids = self._id
     local info = ids[id]
     if not info then

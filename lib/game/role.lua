@@ -371,7 +371,7 @@ function proc.enter_game(msg)
     --     ret.first_charge = first_charge
     -- end
     local chess_table = skynet.call(chess_mgr, "lua", "get", user.id)
-    if chess_mgr then
+    if chess_table then
         skynet.call(chess_table, "lua", "leave", user.id)
     end
     timer.add_routine("save_role", role.save_routine, 300)
@@ -555,6 +555,11 @@ function proc.charge(msg)
     }
     local url = msg.url .. "?" .. util.url_query(query)
     return "charge_ret", {url=url}
+end
+
+function proc.get_room_list(msg)
+    local list = skynet.call(table_mgr, "lua", "get_all")
+    return "room_list", list
 end
 
 return role
