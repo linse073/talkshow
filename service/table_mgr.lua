@@ -18,20 +18,25 @@ local use_list = {}
 local function new_number()
     local number = rand.randi(200000, 999999)
     if number_list[number] then
-        local num = number
+        local i = 1
         repeat
-            num = num - 1
-            if not number_list[num] then
-                return num
+            local go_on = false
+            local up = number - i
+            if up >= 200000 then
+                if not number_list[up] then
+                    return up
+                end
+                go_on = true
             end
-        until num < 200000
-        num = number
-        repeat
-            num = num + 1
-            if not number_list[num] then
-                return num
+            local down = number + i
+            if down <= 999999 then
+                if not number_list[down] then
+                    return down
+                end
+                go_on = true
             end
-        until num > 999999
+            i = i + 1
+        until not go_on
     else
         return number
     end

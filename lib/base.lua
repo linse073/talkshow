@@ -5,6 +5,8 @@ local base = {
 	LOGIN_WEIXIN = 3,
 
     MAX_ROLE = 14,
+
+    ACTION_LEAVE = 1000,
 }
 
 return base

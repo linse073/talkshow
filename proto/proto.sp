@@ -39,15 +39,15 @@
     show_time 3 : integer
     room_type 4 : integer
     desc 5 : string
-    show_list 6 : *integer
-    permit 7 : string
+    permit 6 : string
 }
 
 .room_all {
     info 0 : room_info
     user 1 : *room_user
-    start_session 2 : integer
-    session 3 : integer
+    show_list 2 : *integer
+    start_session 3 : integer
+    session 4 : integer
 }
 
 .change_room {

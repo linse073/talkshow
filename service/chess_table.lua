@@ -25,7 +25,8 @@ local logic
 function CMD.init(room, info, agent, server)
     rand.init(floor(skynet.time()))
     logic = setmetatable({}, talkshow)
-    logic:init(number, room, rand, server)
+    room.number = number
+    logic:init(room, rand, server)
     return logic:enter(info, agent)
 end
 
