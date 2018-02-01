@@ -94,6 +94,8 @@ local function get_user()
                 openid = user.openid,
                 unionid = user.unionid,
 				ip = user.ip,
+                model = user.model,
+                name = user.name,
 			}
 		else
 			local now = floor(skynet.time())
@@ -565,12 +567,14 @@ end
 function proc.change_user(msg)
     local data = game.data
     local user = data.user
+    local info = data.info
     local p = update_user()
     local pu = p.user
-    user.model = msg.model
-    pu.model = msg.model
-    user.name = msg.name
-    pu.name = msg.name
+    for k, v in pairs(msg) do
+        user[k] = v
+        info[k] = v
+        pu[k] = v
+    end
     return "update_user", {update=p}
 end
 
