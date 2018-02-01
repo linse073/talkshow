@@ -123,6 +123,7 @@ function talkshow:enter(info, agent)
     local ids = self._id
     ids[info.id] = info
     self._count = self._count + 1
+    skynet.call(table_mgr, "lua", "update", room.number, room.name, self._count)
     skynet.call(chess_mgr, "lua", "add", info.id, skynet.self())
     local user = {}
     for k, v in pairs(ids) do
@@ -188,9 +189,10 @@ function talkshow:leave(id)
         ids[id] = nil
         self._role[info.pos] = nil
         self._count = self._count - 1
+        local room = self._room
+        skynet.call(table_mgr, "lua", "update", room.number, room.name, self._count)
         skynet.call(chess_mgr, "lua", "del", id)
         skynet.call(info.agent, "lua", "action", "role", "leave")
-        local room = self._room
         if self._count == 0 then
             room.chief = 0
             self:finish()
@@ -209,12 +211,13 @@ function talkshow:quit(id, msg)
     ids[id] = nil
     self._role[info.pos] = nil
     self._count = self._count - 1
+    local room = self._room
+    skynet.call(table_mgr, "lua", "update", room.number, room.name, self._count)
     skynet.call(chess_mgr, "lua", "del", id)
     skynet.call(info.agent, "lua", "action", "role", "leave")
     local cu = {
         {id=id, action=base.ACTION_LEAVE},
     }
-    local room = self._room
     local ru
     if self._count == 0 then
         room.chief = 0
