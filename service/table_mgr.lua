@@ -123,7 +123,7 @@ function CMD.update(number, name, count)
     local info = use_list[number]
     if info then
         info.name = name
-        info.count = count
+        info.user_count = count
     end
 end
 
