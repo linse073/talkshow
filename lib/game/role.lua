@@ -328,7 +328,7 @@ local function syn_info(now)
 end
 local function notify_room_list()
     local list = skynet.call(table_mgr, "lua", "get_all")
-    notify.add("room_list", list)
+    notify.add("room_list", {list=list})
 end
 function proc.enter_game(msg)
 	cz.start()
@@ -559,7 +559,7 @@ end
 
 function proc.get_room_list(msg)
     local list = skynet.call(table_mgr, "lua", "get_all")
-    return "room_list", list
+    return "room_list", {list=list}
 end
 
 function proc.change_user(msg)
