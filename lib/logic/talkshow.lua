@@ -263,4 +263,18 @@ function talkshow:change_room(id, msg)
     return session_msg(info, nil, ru);
 end
 
+function talkshow:speak(id, msg)
+    local ids = self._id
+    local info = ids[id]
+    if not info then
+        error{code = error_code.NOT_IN_CHESS}
+    end
+    info.speak = msg.be
+    local cu = {
+        {id=id, speak=msg.be},
+    }
+    broadcast(cu, nil, ids)
+    return session_msg(info, cu)
+end
+
 return {__index=talkshow}

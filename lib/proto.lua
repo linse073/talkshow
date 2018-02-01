@@ -49,6 +49,7 @@ local type_msg = {
         "quit",
         "change_room",
         "show",
+        "speak",
     },
 }
 

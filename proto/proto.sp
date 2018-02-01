@@ -61,6 +61,10 @@
     action 0 : integer
 }
 
+.speak {
+    be 0 : boolean
+}
+
 .user_all {
     user 0 : user_info
     room 1 : room_all
