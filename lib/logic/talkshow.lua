@@ -224,8 +224,40 @@ function talkshow:quit(id, msg)
         room.chief = self:random_chief()
         ru = {chief = room.chief}
     end
-    broadcast(cu, ru, role)
+    broadcast(cu, ru, ids)
     return session_msg(info, cu, ru)
+end
+
+function talkshow:show(id, msg)
+    local ids = self._id
+    local info = ids[id]
+    if not info then
+        error{code = error_code.NOT_IN_CHESS}
+    end
+    local cu = {
+        {id=id, action=msg.action},
+    }
+    broadcast(cu, nil, ids)
+    return session_msg(info, cu)
+end
+
+function talkshow:change_room(id, msg)
+    local ids = self._id
+    local info = ids[id]
+    if not info then
+        error{code = error_code.NOT_IN_CHESS}
+    end
+    local room = self._room
+    if room.chief ~= id then
+        error{code = error_code.PERMISSION_LIMIT}
+    end
+    local ru = {}
+    for k, v in pairs(msg) do
+        room[k] = v
+        ru[k] = v
+    end
+    broadcast(nil, ru, ids)
+    return session_msg(info, nil, ru);
 end
 
 return {__index=talkshow}

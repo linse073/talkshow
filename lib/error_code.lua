@@ -38,6 +38,7 @@ local type_code = {
         ERROR_CHESS_NAME="游戏不匹配",
         ERROR_OPERATION="操作失败",
         ROOM_CARD_LIMIT="钻石数量不足",
+        PERMISSION_LIMIT="没有权限",
     },
 }
 
