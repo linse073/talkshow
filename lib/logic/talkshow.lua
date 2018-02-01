@@ -114,6 +114,8 @@ function talkshow:enter(info, agent)
     local pos = self:random_pos()
     info.agent = agent
     info.pos = pos
+    info.show_time = 0
+    info.speak = false
     info.session = 1
     local room = self._room
     if not room.chief then

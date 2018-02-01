@@ -30,6 +30,7 @@
     action 9 : integer
     permit 10 : string
     show_time 11 : integer
+    speak 12 : boolean
 }
 
 .room_info {
