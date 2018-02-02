@@ -229,7 +229,7 @@ function talkshow:quit(id, msg)
         room.chief = self:random_chief()
         ru = {chief = room.chief}
     end
-    broadcast(cu, ru, ids)
+    broadcast(cu, ru, ids, id)
     return session_msg(info, cu, ru)
 end
 
@@ -242,7 +242,7 @@ function talkshow:show(id, msg)
     local cu = {
         {id=id, action=msg.action},
     }
-    broadcast(cu, nil, ids)
+    broadcast(cu, nil, ids, id)
     return session_msg(info, cu)
 end
 
@@ -261,7 +261,7 @@ function talkshow:change_room(id, msg)
         room[k] = v
         ru[k] = v
     end
-    broadcast(nil, ru, ids)
+    broadcast(nil, ru, ids, id)
     return session_msg(info, nil, ru);
 end
 
@@ -275,7 +275,7 @@ function talkshow:speak(id, msg)
     local cu = {
         {id=id, speak=msg.be},
     }
-    broadcast(cu, nil, ids)
+    broadcast(cu, nil, ids, id)
     return session_msg(info, cu)
 end
 
