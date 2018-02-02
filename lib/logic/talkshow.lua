@@ -23,7 +23,7 @@ skynet.init(function()
 end)
 
 local function session_msg(user, chess_user, chess_info)
-    local msg = {update={chess={
+    local msg = {update={room={
         info = chess_info,
         user = chess_user,
         session = user.session,
