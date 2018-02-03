@@ -11,7 +11,9 @@ local function new_list()
             local item = head
             head = item.next
             item.next = nil
-            head.front = nil
+            if head then
+                head.front = nil
+            end
             count = count + 1
             if count == 0 then
                 tail = nil
