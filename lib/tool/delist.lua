@@ -20,6 +20,10 @@ local function new_list()
         end
     end
 
+    function list.head()
+        return head
+    end
+
     function list.push(item)
         if list.has(item) then
             return false

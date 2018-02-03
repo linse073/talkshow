@@ -9,6 +9,7 @@ local ipairs = ipairs
 local pairs = pairs
 local table = table
 local floor = math.floor
+local assert = assert
 
 local base
 local error_code
@@ -73,12 +74,14 @@ function talkshow:init(room, rand, server)
 end
 
 function talkshow:pop_show(show_role, now)
+    local show_list = self._show_list
+    assert(show_list.pop().value==show_role.id, "list head isn't show role")
     show_role.show_time = 0
     self._show_role = nil
     local cu = {
-        {id=show_role.id, show_time=0},
+        {id=show_role.id, show_time=0, action=base.ACTION_UNSTAGE},
     }
-    local ns = self._show_list.pop()
+    local ns = show_list.head()
     if ns then
         local nr = self._id[ns.value]
         nr.show_time = now
@@ -324,30 +327,22 @@ function talkshow:stage(id, msg)
         error{code = error_code.NOT_IN_CHESS}
     end
     local show_list = self._show_list
-    if show_list.count() == 0 then
+    if not show_list.push(info.queue) then
+        error{code = error_code.ALREAD_ON_SHOW_LIST}
+    end
+    local cu = {id=id, action=base.ACTION_STAGE}
+    if show_list.count() == 1 then
         local now = floor(skynet.time())
         info.show_time = now
         self._show_role = info
-        local cu = {
-            {id=id, show_time=now},
-        }
+        cu.show_time = now
         if info.speak then
-            cu[1].speak = false
+            cu.speak = false
         end
-        local tu = {user=cu}
-        broadcast(tu, ids, id)
-        return session_msg(info, tu)
-    else
-        if not show_list.push(info.queue) then
-            error{code = error_code.ALREAD_IN_CHESS}
-        end
-        local cu = {
-            {id=id, action=base.ACTION_STAGE},
-        }
-        local tu = {user=cu}
-        broadcast(tu, ids, id)
-        return session_msg(info, tu)
     end
+    local tu = {user={cu}}
+    broadcast(tu, ids, id)
+    return session_msg(info, tu)
 end
 
 function talkshow:unstage(id, msg)
