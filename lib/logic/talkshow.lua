@@ -150,17 +150,18 @@ function talkshow:enter(info, agent)
     info.show_time = 0
     info.speak = false
     info.session = 1
+    local id = info.id
     info.queue = {value=id}
     local room = self._room
     if not room.chief then
-        room.chief = info.id
+        room.chief = id
     end
     self._role[pos] = info
     local ids = self._id
-    ids[info.id] = info
+    ids[id] = info
     self._count = self._count + 1
     skynet.call(table_mgr, "lua", "update", room.number, room.name, self._count)
-    skynet.call(chess_mgr, "lua", "add", info.id, skynet.self())
+    skynet.call(chess_mgr, "lua", "add", id, skynet.self())
     local user = {}
     for k, v in pairs(ids) do
         user[#user+1] = v
