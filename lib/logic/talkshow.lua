@@ -94,10 +94,13 @@ end
 function talkshow:update()
     local show_role = self._show_role
     if show_role then
-        local now = floor(skynet.time())
-        if now - show_role.show_time >= self._room.show_time then
-            local cu = self:pop_show(show_role, now)
-            broadcast({user=cu}, self._id)
+        local show_time = self._room.show_time
+        if show_time > 0 then
+            local now = floor(skynet.time())
+            if now - show_role.show_time >= show_time then
+                local cu = self:pop_show(show_role, now)
+                broadcast({user=cu}, self._id)
+            end
         end
     end
 end
