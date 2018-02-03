@@ -331,6 +331,9 @@ function talkshow:stage(id, msg)
         local cu = {
             {id=id, show_time=now},
         }
+        if info.speak then
+            cu[1].speak = false
+        end
         local tu = {user=cu}
         broadcast(tu, ids, id)
         return session_msg(info, tu)
