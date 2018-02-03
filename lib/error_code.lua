@@ -60,4 +60,8 @@ for k, v in pairs(type_code) do
     end
 end
 
+local util = require "util"
+util.dump(code)
+util.dump(code_string)
+
 return {code=code, code_string=code_string}
