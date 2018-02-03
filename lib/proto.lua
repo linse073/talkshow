@@ -50,6 +50,8 @@ local type_msg = {
         "change_room",
         "show",
         "speak",
+        "stage",
+        "unstage",
     },
 }
 

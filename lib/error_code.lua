@@ -39,6 +39,8 @@ local type_code = {
         ERROR_OPERATION="操作失败",
         ROOM_CARD_LIMIT="钻石数量不足",
         PERMISSION_LIMIT="没有权限",
+        NOT_ON_SHOW_LIST="未申请上台",
+        ALREADY_ON_SHOW_LIST="已申请上台",
     },
 }
 

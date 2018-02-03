@@ -1,6 +1,8 @@
 local skynet = require "skynet"
 local share = require "share"
 local util = require "util"
+local delist = require "tool.delist"
+local timer = require "timer"
 
 local string = string
 local ipairs = ipairs
@@ -22,24 +24,21 @@ skynet.init(function()
     offline_mgr = skynet.queryservice("offline_mgr")
 end)
 
-local function session_msg(user, chess_user, chess_info)
-    local msg = {update={room={
-        info = chess_info,
-        user = chess_user,
-        session = user.session,
-    }}}
+local function session_msg(user, room)
+    room.session = user.session
+    local msg = {update={room=room}}
     user.session = user.session + 1
     return "update_user", msg
 end
 
-local function send(user, chess_user, chess_info)
+local function send(user, room)
     if user.agent then
-        local m, i = session_msg(user, chess_user, chess_info)
+        local m, i = session_msg(user, room)
         skynet.call(user.agent, "lua", "notify", m, i)
     end
 end
 
-local function broadcast(chess_user, chess_info, role, ...)
+local function broadcast(room, role, ...)
     if ... then
         local exclude = {}
         for k, v in ipairs({...}) do
@@ -47,12 +46,12 @@ local function broadcast(chess_user, chess_info, role, ...)
         end
         for k, v in pairs(role) do
             if not exclude[v.id] then
-                send(v, chess_user, chess_info)
+                send(v, room)
             end
         end
     else
         for k, v in pairs(role) do
-            send(v, chess_user, chess_info)
+            send(v, room)
         end
     end
 end
@@ -67,10 +66,41 @@ function talkshow:init(room, rand, server)
     self._id = {}
     self._count = 0
     self._chat = (string.unpack("B", room.permit)==1)
-    self._show_list = {}
+    self._show_list = delist()
+    timer.add_second_routine("show_timer", function()
+        self:update()
+    end)
+end
+
+function talkshow:pop_show(show_role, now)
+    show_role.show_time = 0
+    self._show_role = nil
+    local cu = {
+        {id=show_role.id, show_time=0},
+    }
+    local ns = self._show_list.pop()
+    if ns then
+        local nr = self._id[ns.value]
+        nr.show_time = now
+        self._show_role = nr
+        cu[#cu+1] = {id=nr.id, show_time=now}
+    end
+    return cu
+end
+
+function talkshow:update()
+    local show_role = self._show_role
+    if show_role then
+        local now = floor(skynet.time())
+        if now - show_role.show_time >= self._room.show_time then
+            local cu = self:pop_show(show_role, now)
+            broadcast({user=cu}, self._id)
+        end
+    end
 end
 
 function talkshow:destroy()
+    timer.del_second_routine("show_timer")
 end
 
 local function finish()
@@ -117,6 +147,7 @@ function talkshow:enter(info, agent)
     info.show_time = 0
     info.speak = false
     info.session = 1
+    info.queue = {value=id}
     local room = self._room
     if not room.chief then
         room.chief = info.id
@@ -134,6 +165,7 @@ function talkshow:enter(info, agent)
     return "update_user", {update={room={
         info = room,
         user = user,
+        show_list = self._show_list.get_all(),
         start_session = info.session,
     }}}
 end
@@ -148,7 +180,7 @@ function talkshow:join(info, agent)
         error{code = error_code.ALREAD_IN_CHESS}
     end
     local rmsg, rinfo = self:enter(info, agent)
-    broadcast({info}, nil, ids, info.id)
+    broadcast({user={info}}, ids, info.id)
     return rmsg, rinfo
 end
 
@@ -184,32 +216,9 @@ function talkshow:random_chief()
     assert(false, "not role")
 end
 
-function talkshow:leave(id)
+function talkshow:leave_impl(info)
+    local id = info.id
     local ids = self._id
-    local info = ids[id]
-    if info then
-        ids[id] = nil
-        self._role[info.pos] = nil
-        self._count = self._count - 1
-        local room = self._room
-        skynet.call(table_mgr, "lua", "update", room.number, room.name, self._count)
-        skynet.call(chess_mgr, "lua", "del", id)
-        skynet.call(info.agent, "lua", "action", "role", "leave")
-        if self._count == 0 then
-            room.chief = 0
-            self:finish()
-        elseif id == room.chief then
-            room.chief = self:random_chief()
-        end
-    end
-end
-
-function talkshow:quit(id, msg)
-    local ids = self._id
-    local info = ids[id]
-    if not info then
-        error{code = error_code.NOT_IN_CHESS}
-    end
     ids[id] = nil
     self._role[info.pos] = nil
     self._count = self._count - 1
@@ -217,9 +226,17 @@ function talkshow:quit(id, msg)
     skynet.call(table_mgr, "lua", "update", room.number, room.name, self._count)
     skynet.call(chess_mgr, "lua", "del", id)
     skynet.call(info.agent, "lua", "action", "role", "leave")
-    local cu = {
-        {id=id, action=base.ACTION_LEAVE},
-    }
+    self._show_list.remove(info.queue)
+    local cu
+    local show_role = self._show_role
+    if show_role and show_role.id == id then
+        cu = self:pop_show(show_role, floor(skynet.time()))
+        cu[1].action = base.ACTION_LEAVE
+    else
+        cu = {
+            {id=id, action=base.ACTION_LEAVE},
+        }
+    end
     local ru
     if self._count == 0 then
         room.chief = 0
@@ -229,8 +246,26 @@ function talkshow:quit(id, msg)
         room.chief = self:random_chief()
         ru = {chief = room.chief}
     end
-    broadcast(cu, ru, ids, id)
-    return session_msg(info, cu, ru)
+    local tu = {user=cu, info=ru}
+    broadcast(tu, ids)
+    return tu
+end
+
+function talkshow:leave(id)
+    local info = self._id[id]
+    if info then
+        self:leave_impl(info)
+    end
+end
+
+function talkshow:quit(id, msg)
+    local ids = self._id
+    local info = ids[id]
+    if not info then
+        error{code = error_code.NOT_IN_CHESS}
+    end
+    local tu = self:leave_impl(info)
+    return session_msg(info, tu)
 end
 
 function talkshow:show(id, msg)
@@ -242,8 +277,9 @@ function talkshow:show(id, msg)
     local cu = {
         {id=id, action=msg.action},
     }
-    broadcast(cu, nil, ids, id)
-    return session_msg(info, cu)
+    local tu = {user=cu}
+    broadcast(tu, ids, id)
+    return session_msg(info, tu)
 end
 
 function talkshow:change_room(id, msg)
@@ -261,8 +297,9 @@ function talkshow:change_room(id, msg)
         room[k] = v
         ru[k] = v
     end
-    broadcast(nil, ru, ids, id)
-    return session_msg(info, nil, ru);
+    local tu = {info=ru}
+    broadcast(tu, ids, id)
+    return session_msg(info, tu);
 end
 
 function talkshow:speak(id, msg)
@@ -275,8 +312,65 @@ function talkshow:speak(id, msg)
     local cu = {
         {id=id, speak=msg.be},
     }
-    broadcast(cu, nil, ids, id)
-    return session_msg(info, cu)
+    local tu = {user=cu}
+    broadcast(tu, ids, id)
+    return session_msg(info, tu)
+end
+
+function talkshow:stage(id, msg)
+    local ids = self._id
+    local info = ids[id]
+    if not info then
+        error{code = error_code.NOT_IN_CHESS}
+    end
+    local show_list = self._show_list
+    if show_list.count() == 0 then
+        local now = floor(skynet.time())
+        info.show_time = now
+        self._show_role = info
+        local cu = {
+            {id=id, show_time=now},
+        }
+        local tu = {user=cu}
+        broadcast(tu, ids, id)
+        return session_msg(info, tu)
+    else
+        if not show_list.push(info.queue) then
+            error{code = error_code.ALREAD_IN_CHESS}
+        end
+        local cu = {
+            {id=id, action=base.ACTION_STAGE},
+        }
+        local tu = {user=cu}
+        broadcast(tu, ids, id)
+        return session_msg(info, tu)
+    end
+end
+
+function talkshow:unstage(id, msg)
+    local ids = self._id
+    local info = ids[id]
+    if not info then
+        error{code = error_code.NOT_IN_CHESS}
+    end
+    local show_role = self._show_role
+    if show_role and show_role.id == id then
+        local cu = self:pop_show(show_role, floor(skynet.time()))
+        local tu = {user=cu}
+        broadcast(tu, ids, id)
+        return session_msg(info, tu)
+    else
+        local show_list = self._show_list
+        if not show_list.remove(info.queue) then
+            error{code = error_code.NOT_ON_SHOW_LIST}
+        end
+        local cu = {
+            {id=id, action=base.ACTION_UNSTAGE},
+        }
+        local tu = {user=cu}
+        broadcast(tu, ids, id)
+        return session_msg(info, tu)
+    end
 end
 
 return {__index=talkshow}
