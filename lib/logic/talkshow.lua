@@ -33,10 +33,8 @@ local function session_msg(user, room)
 end
 
 local function send(user, room)
-    if user.agent then
-        local m, i = session_msg(user, room)
-        skynet.call(user.agent, "lua", "notify", m, i)
-    end
+    local m, i = session_msg(user, room)
+    skynet.call(user.agent, "lua", "notify", m, i)
 end
 
 local function broadcast(room, role, ...)
