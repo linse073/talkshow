@@ -55,6 +55,12 @@ local function new_list()
             end
             item.front = nil
             item.next = nil
+            if item == head then
+                head = next
+            end
+            if item == tail then
+                tail = front
+            end
             return true
         else
             return false
