@@ -55,6 +55,7 @@ local function new_list()
             end
             item.front = nil
             item.next = nil
+            count = count - 1
             if item == head then
                 head = next
             end
