@@ -63,6 +63,7 @@ function talkshow:init(room, rand, server)
     self._server = server
     self._role = {}
     self._id = {}
+    self._queue = {}
     self._count = 0
     self._chat = (string.unpack("B", room.permit)==1)
     self._show_list = delist()
@@ -152,7 +153,7 @@ function talkshow:enter(info, agent)
     info.speak = false
     info.session = 1
     local id = info.id
-    info.queue = {value=id}
+    self._queue[id] = {value=id}
     local room = self._room
     if not room.chief then
         room.chief = id
@@ -231,7 +232,7 @@ function talkshow:leave_impl(info)
     skynet.call(table_mgr, "lua", "update", room.number, room.name, self._count)
     skynet.call(chess_mgr, "lua", "del", id)
     skynet.call(info.agent, "lua", "action", "role", "leave")
-    self._show_list.remove(info.queue)
+    self._show_list.remove(self._queue[id])
     local cu
     local show_role = self._show_role
     if show_role and show_role.id == id then
@@ -329,7 +330,7 @@ function talkshow:stage(id, msg)
         error{code = error_code.NOT_IN_CHESS}
     end
     local show_list = self._show_list
-    if not show_list.push(info.queue) then
+    if not show_list.push(self._queue[id]) then
         error{code = error_code.ALREAD_ON_SHOW_LIST}
     end
     local cu = {id=id, action=base.ACTION_STAGE}
@@ -361,7 +362,7 @@ function talkshow:unstage(id, msg)
         return session_msg(info, tu)
     else
         local show_list = self._show_list
-        if not show_list.remove(info.queue) then
+        if not show_list.remove(self._queue[id]) then
             error{code = error_code.NOT_ON_SHOW_LIST}
         end
         local cu = {
