@@ -234,13 +234,13 @@ function talkshow:leave_impl(info)
     skynet.call(table_mgr, "lua", "update", room.number, room.name, self._count)
     skynet.call(chess_mgr, "lua", "del", id)
     skynet.call(info.agent, "lua", "action", "role", "leave")
-    self._show_list.remove(queue)
     local cu
     local show_role = self._show_role
     if show_role and show_role.id == id then
         cu = self:pop_show(show_role, floor(skynet.time()))
         cu[1].action = base.ACTION_LEAVE
     else
+        self._show_list.remove(queue)
         cu = {
             {id=id, action=base.ACTION_LEAVE},
         }
