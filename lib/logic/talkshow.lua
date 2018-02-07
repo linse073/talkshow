@@ -85,7 +85,7 @@ function talkshow:pop_show(show_role, now)
         local nr = self._id[ns.value]
         nr.show_time = now
         self._show_role = nr
-        cu[#cu+1] = {id=nr.id, show_time=now, action=base.ACTION_STAGE}
+        cu[#cu+1] = {id=nr.id, show_time=now}
     end
     return cu
 end
