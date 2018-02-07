@@ -227,12 +227,14 @@ function talkshow:leave_impl(info)
     local ids = self._id
     ids[id] = nil
     self._role[info.pos] = nil
+    local queue = self._queue[id]
+    self._queue[id] = nil
     self._count = self._count - 1
     local room = self._room
     skynet.call(table_mgr, "lua", "update", room.number, room.name, self._count)
     skynet.call(chess_mgr, "lua", "del", id)
     skynet.call(info.agent, "lua", "action", "role", "leave")
-    self._show_list.remove(self._queue[id])
+    self._show_list.remove(queue)
     local cu
     local show_role = self._show_role
     if show_role and show_role.id == id then
